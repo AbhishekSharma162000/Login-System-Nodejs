@@ -1,24 +1,40 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { findByIdAndUpdate } = require('../models/userModel');
-
-
 
 
 const create_token = async(id)=>{
     try {
         
-        const token =  jwt.sign({ _id:id},process.env.JWT_SECRET, {
-            // expiresIn: process.env.JWT_SECRET,
+        const token =  jwt.sign({ _id:id},process.env.JWT_SECRET,  {
+            // algorithm: "HS256",
+            expiresIn: process.env.JWT_EXPIRES_IN,
             
         });
+        console.log("token:", token);
         return token;
 
     } catch (error) {
         res.status(404).send(error.message);
         console.log("token error")
     }
+}
+
+// Verifying the JWT token
+const verify_token = async (token, secretKey) => {
+    try {
+        const verifyToken = jwt.verify(token, secretKey, (err)=>{
+            if(err){
+                console.log("Token Not Verified......")
+            }else{
+                console.log("Token Verified Successfully......")
+            }
+        });
+        return verifyToken;
+    } catch (error) {
+        res.status(404).send(error.message);
+    }
+    
 }
 
 const securePassord = async (password)=>{
@@ -95,13 +111,14 @@ const user_login = async (req, res) => {
                     const tokenData = await create_token(userData._id);
                     const userUpdated = await User.findByIdAndUpdate({_id: userData.id},{
                         $set:{token: tokenData},
-                
-                    })
+                    });
+
+                   const verifyToken =  await verify_token(tokenData,process.env.JWT_SECRET);
 
                     const response = {
                         success: true,
                         mssg: "User Details",
-                        data: userUpdated
+                        data: userUpdated,
                     }
                     res.status(200).send(response);
                 }else{
