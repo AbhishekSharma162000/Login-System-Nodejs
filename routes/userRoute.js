@@ -14,7 +14,7 @@ user_route.use(bodyParser.json());
 user_route.use(bodyParser.urlencoded({extended:true}));
 
 const auth = require('../middlerware/auth');
-const verifyToken = require("../middlerware/auth");
+
 
 user_route.post('/register', validate(validation.authSchema) ,user_controller.register_user);
 user_route.post('/login',  user_controller.user_login);

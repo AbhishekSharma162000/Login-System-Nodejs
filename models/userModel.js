@@ -1,3 +1,4 @@
+const { string } = require('joi');
 const mongoose = require('mongoose');
 
 
@@ -22,11 +23,14 @@ const UserSchema = new schema({
         type: String,
         default: ''
     },
-
     token:{
         type: String,
         default: ''
-    }},
-    {timestamps: true, versionKey: false})
+    },
+    refreshToken:{
+        type: String,
+        default: ''
+    },
+    },{timestamps: true, versionKey: false})
 
 module.exports = mongoose.model("User", UserSchema);

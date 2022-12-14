@@ -6,17 +6,15 @@ const jwt = require('jsonwebtoken');
 const create_token = async(id)=>{
     try {
         
-        const token =  jwt.sign({ _id:id},process.env.JWT_SECRET,  {
+        const token =  jwt.sign({ _id:id},process.env.ACCESS_TOKEN_SECRET,  {
             // algorithm: "HS256",
-            expiresIn: process.env.JWT_EXPIRES_IN,
+            // expiresIn: process.env.JWT_EXPIRES_IN,
             
         });
-        console.log("token:", token);
         return token;
 
     } catch (error) {
         res.status(404).send(error.message);
-        console.log("token error")
     }
 }
 
@@ -25,9 +23,9 @@ const verify_token = async (token, secretKey) => {
     try {
         const verifyToken = jwt.verify(token, secretKey, (err)=>{
             if(err){
-                console.log("Token Not Verified......")
+                console.log("Token Not Verified......");
             }else{
-                console.log("Token Verified Successfully......")
+                console.log("Token Verified Successfully......");
             }
         });
         return verifyToken;
@@ -35,6 +33,21 @@ const verify_token = async (token, secretKey) => {
         res.status(404).send(error.message);
     }
     
+}
+
+// Refresh Token
+const refresh_token = async (id) => {
+    try {
+        const refreshToken = jwt.sign({ _id: id }, process.env.REFRESH_TOKEN_SECRET, {
+            // expiresIn: "10s",
+            });
+
+        return refreshToken;
+
+    } catch (error) {
+        console.log("Refresh token error:");
+        res.status(404).send(error.message);
+    }
 }
 
 const securePassord = async (password)=>{
@@ -101,6 +114,7 @@ const user_login = async (req, res) => {
             res.send("Username blank")
         }else{
             const userData = await User.findOne({username: username});
+           
             if(userData) {
 
                 const passwordMatch = await bcrypt.compare(password, userData.password);
@@ -109,16 +123,21 @@ const user_login = async (req, res) => {
                 if(passwordMatch) {
     
                     const tokenData = await create_token(userData._id);
+                    const refreshToken = await refresh_token(userData._id);
+
+                    // update in mongooDB
                     const userUpdated = await User.findByIdAndUpdate({_id: userData.id},{
-                        $set:{token: tokenData},
+                        $set:{token: tokenData, refreshToken: refreshToken}
+
                     });
 
-                   const verifyToken =  await verify_token(tokenData,process.env.JWT_SECRET);
+                    const verifyToken =  await verify_token(tokenData,process.env.ACCESS_TOKEN_SECRET);
+                  
 
                     const response = {
                         success: true,
                         mssg: "User Details",
-                        data: userUpdated,
+                        data: userUpdated
                     }
                     res.status(200).send(response);
                 }else{
@@ -139,5 +158,5 @@ const user_login = async (req, res) => {
 
 module.exports = {
     register_user,
-    user_login
+    user_login,
 }
